@@ -2,7 +2,8 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
+                            SetEnvironmentVariable)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -11,12 +12,18 @@ from launch_ros.actions import Node
 def generate_launch_description():
     pkg = get_package_share_directory('slam_robot')
     gazebo_ros = get_package_share_directory('gazebo_ros')
-    tb3_gazebo = get_package_share_directory('turtlebot3_gazebo')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
     world = LaunchConfiguration('world')
     x_pose = LaunchConfiguration('x_pose')
     y_pose = LaunchConfiguration('y_pose')
+
+    # Let Gazebo find the models via model://name, keeping whatever model paths were already set.
+    model_paths = [os.path.join(pkg, 'models')]
+    if os.environ.get('GAZEBO_MODEL_PATH'):
+        model_paths.append(os.environ['GAZEBO_MODEL_PATH'])
+    set_model_path = SetEnvironmentVariable(
+        'GAZEBO_MODEL_PATH', os.pathsep.join(model_paths))
 
     # robot_state_publisher publishes the fixed TF frames from the URDF
     with open(os.path.join(pkg, 'urdf', 'slam_robot_waffle.urdf'), 'r') as f:
@@ -29,9 +36,11 @@ def generate_launch_description():
         DeclareLaunchArgument('use_sim_time', default_value='true'),
         DeclareLaunchArgument(
             'world',
-            default_value=os.path.join(tb3_gazebo, 'worlds', 'turtlebot3_world.world')),
-        DeclareLaunchArgument('x_pose', default_value='-2.0'),
-        DeclareLaunchArgument('y_pose', default_value='-0.5'),
+            default_value=os.path.join(pkg, 'worlds', 'object_search.world')),
+        DeclareLaunchArgument('x_pose', default_value='-3.0'),
+        DeclareLaunchArgument('y_pose', default_value='-2.0'),
+
+        set_model_path,
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
