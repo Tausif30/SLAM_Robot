@@ -41,6 +41,7 @@ setup(
     entry_points={
         'console_scripts': [
             'navigation_node = navigation.navigation_node:main',
+            'navigation_manager = navigation.navigation_manager:main',
         ],
     },
 )
