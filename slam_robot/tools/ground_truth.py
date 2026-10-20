@@ -5,20 +5,15 @@
      picture, and is it really visible?  yolo_lines() and draw_overlay() turn that into labels and a check picture.
 Used by dataset.py (labels) and training.py (scoring the detector).
 """
-import xml.etree.ElementTree as ET
 
+import xml.etree.ElementTree as ET
 import cv2
 import numpy as np
-
 from camera_geometry import camera_pose_world, cast, pixel_rays
 from pipeline_config import (CLASSES, DEPTH_TOL_ABS, DEPTH_TOL_REL, FAR_CLIP, MIN_PIXELS, MIN_VISIBLE_FRAC,
                              NEAR_CLIP)
 
-
-# ======================================================================================================
-# 1. The world file
-# ======================================================================================================
-
+# World file
 def class_of(name):
     n = name.lower()
     if n.startswith("red_box"):
@@ -29,11 +24,9 @@ def class_of(name):
         return "blue_cylinder"
     return None
 
-
 def parse_floats(text, n):
     vals = [float(v) for v in (text or "").split()]
     return vals + [0.0] * (n - len(vals))
-
 
 def load_world_objects(path):
     """Read the labelled objects (box / cylinder models) from the SDF world file."""

@@ -1,49 +1,32 @@
 #!/usr/bin/env python3
-"""ml_pipeline.py - build, train and test the object detector: one command line for every step.
-
-The detector is a YOLO26n network fine-tuned on pictures from the Gazebo world. The ground-truth boxes are not
+"""The detector is a YOLO26n network fine-tuned on pictures from the Gazebo world. The ground-truth boxes are not
 drawn by hand: the world file says where every object is, the camera model says where it appears in the picture,
 and the depth image says whether it is really visible (see ground_truth.label_frame).
 
-The steps, in order. Run from anywhere; paths are relative to this folder and to ~/slam_ws (or $SLAM_WS):
-
-  python ml_pipeline.py calibrate            camera model -> config/camera_calibration.json     [ROS + simulation]
-  python ml_pipeline.py collect 1500         random robot poses -> ~/slam_ws/dataset_raw        [ROS + simulation]
-  python ml_pipeline.py label                labels + colour quality check of dataset_raw
-  python ml_pipeline.py build                split by floor location -> ~/slam_ws/dataset
-  python ml_pipeline.py train --epochs 40    fine-tune yolo26n -> ~/slam_ws/runs/detector_v1    [ultralytics]
-  python ml_pipeline.py evaluate --sweep     score on the test split, confidence sweep          [ultralytics]
-  python ml_pipeline.py figures              copy every result picture into ~/slam_ws/figures
+Command Orders for Training:
+  python ml_pipeline.py calibrate            Camera model -> config/camera_calibration.json     [ROS + simulation]
+  python ml_pipeline.py collect 1500         Random robot poses -> ~/slam_ws/dataset_raw        [ROS + simulation]
+  python ml_pipeline.py label                Labels + colour quality check of dataset_raw
+  python ml_pipeline.py build                Split by floor location -> ~/slam_ws/dataset
+  python ml_pipeline.py train --epochs 40    Fine-tune yolo26n -> ~/slam_ws/runs/detector_v1    [ultralytics]
+  python ml_pipeline.py evaluate --sweep     Score on the test split, confidence sweep          [ultralytics]
+  python ml_pipeline.py figures              Copy every result picture into ~/slam_ws/figures
 
 Extras:
-  python ml_pipeline.py collect 300 --only grey --out ~/slam_ws/dataset_stress     look-alike stress set
+  python ml_pipeline.py collect 300 --only grey --out ~/slam_ws/dataset_stress     Look-alike stress set
   python ml_pipeline.py label --raw ~/slam_ws/dataset_stress
   python ml_pipeline.py evaluate --raw ~/slam_ws/dataset_stress --conf 0.05
-  python ml_pipeline.py teleport 3.7 -2.0 -26.6                                    put the robot somewhere
-
-ROS and Ultralytics are imported only by the commands that need them, so label / build / figures work without either.
-
-The 8 files in this folder:
-  ml_pipeline.py      this file: the command line
-  pipeline_config.py  paths and constants (classes, depth tolerances, sampling settings, ...)
-  camera_geometry.py  rotations, camera pose, one ray per pixel, ray / box and ray / cylinder hits, calibration maths
-  ground_truth.py     the world file -> objects;  label_frame(): which object is where in a picture, is it visible?
-  dataset.py          pose sampling, collect, label (+ colour check), build (split by floor cell)
-  training.py         train, scoring (confusion matrix ...), reports, evaluate (+ confidence sweep), figures
-  ros_collector.py    everything that needs ROS + the simulation: the Collector node and the calibrate command
-  teleport.py         teleport_entity(): the one call to /gazebo/set_entity_state, and the teleport command
+  python ml_pipeline.py teleport x y yaw                                           Teleport Robot
 """
 import argparse
-
 import dataset
 import ros_collector
 import teleport
 import training
 
 
+# Command, function with all the options, function that runs it, one-line help.
 def commands():
-    """(command, function that defines its options, function that runs it, one-line help).
-    Looked up when the parser is built, so each command stays defined next to its code."""
     return (
         ("calibrate", ros_collector.calibrate_arguments, ros_collector.run_calibrate,
          "read the camera model from the running simulation"),
@@ -62,7 +45,6 @@ def commands():
          "copy every result picture into one folder"),
     )
 
-
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True, metavar="command")
@@ -72,11 +54,9 @@ def build_parser():
         p.set_defaults(func=run)
     return ap
 
-
 def main(argv=None):
     args = build_parser().parse_args(argv)
     args.func(args)
-
 
 if __name__ == "__main__":
     main()

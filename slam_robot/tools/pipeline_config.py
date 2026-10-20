@@ -1,11 +1,8 @@
-"""pipeline_config.py - paths and constants shared by the steps of the ML pipeline.
+# Paths are relative to this file#
 
-Paths are relative to this file (things inside the slam_robot package) and to ~/slam_ws, or $SLAM_WS if set
-(the big data, which is not in git).
-"""
 import os
 
-# ---------------------------------------------------------------- paths
+# Paths
 PKG_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))          # .../src/slam_robot
 WS = os.path.expanduser(os.environ.get("SLAM_WS", "~/slam_ws"))                # where the big data lives (not in git)
 WORLD = os.path.join(PKG_DIR, "worlds", "object_search.world")
@@ -18,10 +15,10 @@ WEIGHTS_DIR = os.path.join(WS, "weights")             # downloaded pretrained we
 DEFAULT_WEIGHTS = os.path.join(RUNS, "detector_v1", "weights", "best.pt")
 FIGURES = os.path.join(WS, "figures")                 # every result picture, copied together by the 'figures' command
 
-# ---------------------------------------------------------------- camera calibration
+# Camera calibration
 BASE_FRAME = "base_footprint"                          # robot frame the camera mounting is measured in
 
-# ---------------------------------------------------------------- classes and labelling
+# Classes and labelling
 CLASSES = ["red_box", "blue_box", "blue_cylinder"]
 NAMES = CLASSES
 BASE_Z = 0.0                 # height of the robot's base_footprint above the floor (m)
@@ -40,5 +37,5 @@ LOOK_JITTER_DEG = 25.0           # random aim error, so objects are sometimes of
 SETTLE_SIM_S = 0.8               # simulated seconds to wait after a teleport
 POSE_TOL_M, POSE_TOL_DEG = 0.02, 1.5
 
-# the Gazebo entity name simulation.launch.py gives the robot (spawn_entity.py -entity slam_robot)
+# The Gazebo entity name simulation.launch.py gives the robot (spawn_entity.py -entity slam_robot)
 ROBOT_NAME = "slam_robot"

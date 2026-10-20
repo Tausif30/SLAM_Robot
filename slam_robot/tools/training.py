@@ -395,11 +395,16 @@ def run_evaluate(a):
     report = dict(source=tag, conf=a.conf, confusion=res["cm"].tolist(), classes=class_stats(res["cm"]),
                   mean_iou=res["mean_iou"], breakdown=bd, problem_frames=sorted(res["bad"]),
                   false_positives=[dict(frame=f["frame"], cls=NAMES[f["cls"]], conf=f["conf"], box=f["box"]) for f in res["fps"]])
+    json.dump(report, open(f"{out}/report.json", "w"), indent=1)            # written first: a failing baseline must not lose it
     if a.yoloe:
-        res0 = evaluate(frames, yoloe_predictor(0.05))
-        print_report(f"ZERO-SHOT YOLOE (no training, text prompts)  on '{tag}'  (confidence >= 0.05)", res0)
-        report["zero_shot"] = dict(confusion=res0["cm"].tolist(), classes=class_stats(res0["cm"]))
-    json.dump(report, open(f"{out}/report.json", "w"), indent=1)
+        try:
+            res0 = evaluate(frames, yoloe_predictor(0.05))
+        except Exception as e:                                               # no network, CLIP missing, ...
+            print(f"\nzero-shot baseline SKIPPED ({type(e).__name__}: {str(e).splitlines()[0][:150] if str(e) else ''})")
+        else:
+            print_report(f"ZERO-SHOT YOLOE (no training, text prompts)  on '{tag}'  (confidence >= 0.05)", res0)
+            report["zero_shot"] = dict(confusion=res0["cm"].tolist(), classes=class_stats(res0["cm"]))
+            json.dump(report, open(f"{out}/report.json", "w"), indent=1)
     if not a.no_official and not a.raw:
         from ultralytics import YOLO
         YOLO(a.weights).val(data=f"{DATASET}/data.yaml", split=a.split, imgsz=640, device="cpu", plots=True,

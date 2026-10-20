@@ -4,9 +4,6 @@
   2. collect         teleport the robot to many poses and save RGB + depth + true pose     [ROS + simulation]
   3. label           ground-truth YOLO labels + an independent colour check of every frame
   4. build           split the labelled frames by floor location into train / val / test
-
-The commands are run_collect / run_label / run_build (ml_pipeline.py calls them); each has a *_arguments(p)
-function that defines its options.
 """
 import glob
 import json
@@ -16,11 +13,9 @@ import random
 import shutil
 import time
 from collections import Counter
-
 import cv2
 import numpy as np
 import yaml
-
 from camera_geometry import angle_diff
 from ground_truth import draw_overlay, label_frame, load_distractors, load_world_objects, yolo_lines
 from pipeline_config import (CALIB, CLASSES, CLEARANCE, DATASET, LOOK_DIST, LOOK_JITTER_DEG, MAP_YAML, MODE_WEIGHTS,
