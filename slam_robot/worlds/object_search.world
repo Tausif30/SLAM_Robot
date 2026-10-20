@@ -158,4 +158,10 @@
     </model>
 
   </world>
+      <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so">
+      <ros>
+        <namespace>/gazebo</namespace>
+      </ros>
+      <update_rate>2.0</update_rate>
+    </plugin>
 </sdf>

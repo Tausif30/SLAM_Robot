@@ -16,6 +16,10 @@ DATASET = os.path.join(WS, "dataset")                 # the train / val / test s
 RUNS = os.path.join(WS, "runs")                       # training runs and evaluation reports
 WEIGHTS_DIR = os.path.join(WS, "weights")             # downloaded pretrained weights (yolo26n.pt, ...)
 DEFAULT_WEIGHTS = os.path.join(RUNS, "detector_v1", "weights", "best.pt")
+FIGURES = os.path.join(WS, "figures")                 # every result picture, copied together by the 'figures' command
+
+# ---------------------------------------------------------------- camera calibration
+BASE_FRAME = "base_footprint"                          # robot frame the camera mounting is measured in
 
 # ---------------------------------------------------------------- classes and labelling
 CLASSES = ["red_box", "blue_box", "blue_cylinder"]
@@ -36,10 +40,5 @@ LOOK_JITTER_DEG = 25.0           # random aim error, so objects are sometimes of
 SETTLE_SIM_S = 0.8               # simulated seconds to wait after a teleport
 POSE_TOL_M, POSE_TOL_DEG = 0.02, 1.5
 
-# models that belong to the world; the one model in /gazebo/model_states that is not listed here is the robot
-WORLD_MODELS = {
-    "ground_plane", "object_search_walls", "red_box", "blue_box_1", "blue_box_2",
-    "blue_box_3", "blue_cylinder_1", "blue_crate_1", "cylinder_1", "cylinder_2",
-    "sphere_1", "crate_1", "sun",
-}
-ROBOT_HINTS = ("waffle", "robot", "turtle", "burger")
+# the Gazebo entity name simulation.launch.py gives the robot (spawn_entity.py -entity slam_robot)
+ROBOT_NAME = "slam_robot"

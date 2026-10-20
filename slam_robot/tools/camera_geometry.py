@@ -1,4 +1,5 @@
-"""camera_geometry.py - rotations, angles, the camera model and ray casting (pure maths, numpy only).
+"""camera_geometry.py - rotations, angles, the camera model, ray casting and the calibration maths
+(pure maths, numpy only).
 
 camera_pose_world + pixel_rays give one world-frame ray per pixel; ray_box / ray_cylinder say how far along
 each ray an object is. ground_truth.label_frame compares that distance with the depth image.
@@ -115,3 +116,38 @@ def cast(obj, o, D):
     if obj["kind"] == "box":
         return ray_box(o, D, obj["center"], obj["yaw"], obj["half"])
     return ray_cylinder(o, D, obj["center"], obj["radius"], obj["half_len"])
+
+
+# ======================================================================================================
+# calibration maths (used by the 'calibrate' command in ros_collector.py)
+# ======================================================================================================
+# Optical frame: x right, y down, z forward.  Body frame: x forward, y left, z up.
+# v_body = M_BODY_FROM_OPTICAL @ v_optical
+M_BODY_FROM_OPTICAL = np.array([[0.0, 0.0, 1.0], [-1.0, 0.0, 0.0], [0.0, -1.0, 0.0]])
+
+
+def to_optical(R):
+    """R: orientation of the camera frame in the robot frame. Return the optical-frame
+    orientation and whether a conversion was needed. Raises if the camera does not face forward."""
+    forward = np.array([1.0, 0.0, 0.0])
+    if R[:, 2] @ forward > 0.8:
+        return R, False                      # frame is already optical (z forward)
+    if R[:, 0] @ forward > 0.8:
+        return R @ M_BODY_FROM_OPTICAL, True  # body convention (x forward): convert
+    raise ValueError(f"camera does not face forward; rotation matrix:\n{R}")
+
+
+def finalize_rotation(R_opt, tol=0.01):
+    """The simulator renders with exact angles, but the TF tree can carry rounding (1.57 instead of pi/2).
+    If the TF rotation is within tol of the exact optical rotation, use the exact one."""
+    if np.abs(np.asarray(R_opt) - M_BODY_FROM_OPTICAL).max() < tol:
+        return M_BODY_FROM_OPTICAL.copy(), True
+    return np.asarray(R_opt), False
+
+
+def merge_calibration(new, old):
+    """Keep the hand-fitted 'refine' block (camera pitch / yaw / height correction) of an existing file."""
+    merged = dict(new)
+    if old and old.get("refine"):
+        merged["refine"] = old["refine"]
+    return merged
