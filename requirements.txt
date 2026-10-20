@@ -1,0 +1,24 @@
+# Python packages for the detector: training, evaluation and the detector node.
+# Install into a virtual environment that can still see ROS:
+#   python3 -m venv --system-site-packages ~/slam_ws/venv
+#   source ~/slam_ws/venv/bin/activate
+#   pip install -r requirements.txt
+#
+# NumPy 2 is used on purpose (PyTorch and Ultralytics need a recent NumPy). Ubuntu's own matplotlib and scipy are
+# built for NumPy 1 and crash with it, so they are pinned here: pip then installs fresh copies INSIDE the venv.
+# The ROS packages themselves are untouched; only programs started from this venv see these versions.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+numpy==2.2.6
+opencv-python==5.0.0.93
+torch==2.14.1+cpu
+torchvision==0.29.1+cpu
+ultralytics==8.4.176
+matplotlib==3.10.9
+scipy==1.15.3
+
+# colcon (ROS Humble) builds Python packages with the old 'setup.py develop' command; 78.1.0 is the version tested here.
+setuptools<80
+
+# Only for the zero-shot YOLOE baseline (ml_pipeline.py evaluate --yoloe); Ultralytics installs it by itself on first use:
+#   git+https://github.com/ultralytics/CLIP.git
