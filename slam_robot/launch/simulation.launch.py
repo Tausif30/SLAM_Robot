@@ -1,5 +1,4 @@
 import os
-
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, IncludeLaunchDescription,
@@ -17,6 +16,7 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     x_pose = LaunchConfiguration('x_pose')
     y_pose = LaunchConfiguration('y_pose')
+    gui = LaunchConfiguration('gui')
 
     # Let Gazebo find the models via model://name, keeping whatever model paths were already set.
     model_paths = [os.path.join(pkg, 'models')]

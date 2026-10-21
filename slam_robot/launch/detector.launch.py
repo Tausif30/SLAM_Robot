@@ -2,6 +2,7 @@
 Commands:
 ros2 launch slam_robot detector.launch.py
 ros2 launch slam_robot detector.launch.py target_label:=blue_box
+ros2 launch slam_robot detector.launch.py max_rate_hz:=8.0
 """
 import os
 from ament_index_python.packages import get_package_share_directory
@@ -10,7 +11,6 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-
 def launch_setup(context):
     parameters = [LaunchConfiguration('params_file').perform(context)]
     overrides = {}
@@ -18,11 +18,13 @@ def launch_setup(context):
         value = LaunchConfiguration(name).perform(context)
         if value:
             overrides[name] = value
+    rate = LaunchConfiguration('max_rate_hz').perform(context)
+    if rate:
+        overrides['max_rate_hz'] = float(rate)
     if overrides:
         parameters.append(overrides)
     return [Node(package='slam_robot', executable='detector_node', name='detector_node',
                  output='screen', parameters=parameters)]
-
 
 def generate_launch_description():
     pkg = get_package_share_directory('slam_robot')
@@ -37,5 +39,8 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'model_path', default_value='',
             description='override the path of the YOLO weights; empty = use the file'),
+        DeclareLaunchArgument(
+            'max_rate_hz', default_value='',
+            description='override the most images per second to process (e.g. 8.0); empty = use the file'),
         OpaqueFunction(function=launch_setup),
     ])
