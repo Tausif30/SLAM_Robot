@@ -21,4 +21,4 @@ scipy==1.15.3
 setuptools<80
 
 # Only for the zero-shot YOLOE baseline (ml_pipeline.py evaluate --yoloe); Ultralytics installs it by itself on first use:
-#   git+https://github.com/ultralytics/CLIP.git
+#   git+https://github.com/ultralytics/CLIP.gitpackaging>=24.2   # setuptools 71+ needs a newer packaging than the system one (21.3)
