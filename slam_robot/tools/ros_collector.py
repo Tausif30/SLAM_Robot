@@ -20,7 +20,6 @@ def stamp_s(header):
 def ready(rgb, depth, odom, t_min):
     return all(m is not None and m[0] >= t_min for m in (rgb, depth, odom))
 
-
 # Build the Collector node class.
 def ros_collector_class():
     import rclpy
