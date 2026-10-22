@@ -7,7 +7,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-
 def generate_launch_description():
     pkg = get_package_share_directory('slam_robot')
     gazebo_ros = get_package_share_directory('gazebo_ros')
@@ -16,7 +15,6 @@ def generate_launch_description():
     world = LaunchConfiguration('world')
     x_pose = LaunchConfiguration('x_pose')
     y_pose = LaunchConfiguration('y_pose')
-    gui = LaunchConfiguration('gui')
 
     # Let Gazebo find the models via model://name, keeping whatever model paths were already set.
     model_paths = [os.path.join(pkg, 'models')]

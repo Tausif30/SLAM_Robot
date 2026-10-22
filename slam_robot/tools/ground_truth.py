@@ -1,11 +1,4 @@
-"""ground_truth.py - what is in the world, and where is it in a picture?
-
-  1. the world file -> the labelled objects (red / blue boxes, blue cylinder) and the unlabelled look-alikes
-  2. label_frame(): world objects + camera model (camera_geometry.py) + depth image -> which object is where in a
-     picture, and is it really visible?  yolo_lines() and draw_overlay() turn that into labels and a check picture.
-Used by dataset.py (labels) and training.py (scoring the detector).
-"""
-
+# Read the SDF world file and determine which objects are visible in a given camera frame, based on depth measurements and camera pose.
 import xml.etree.ElementTree as ET
 import cv2
 import numpy as np
@@ -28,8 +21,8 @@ def parse_floats(text, n):
     vals = [float(v) for v in (text or "").split()]
     return vals + [0.0] * (n - len(vals))
 
+# Read the labelled objects (box / cylinder models) from the SDF world file.
 def load_world_objects(path):
-    """Read the labelled objects (box / cylinder models) from the SDF world file."""
     objs = []
     for model in ET.parse(path).getroot().iter("model"):
         name = model.get("name")
@@ -57,9 +50,8 @@ def load_world_objects(path):
             raise ValueError(f"{name}: unsupported geometry (only box and cylinder)")
     return objs
 
-
+# Grey cylinders, sphere and crate ae considered look-alikes for the detector.
 def load_distractors(path):
-    """Unlabelled single-shape models (the grey cylinders, sphere and crate): look-alikes for the detector."""
     out = []
     for model in ET.parse(path).getroot().iter("model"):
         name = model.get("name")
@@ -81,14 +73,10 @@ def load_distractors(path):
                             radius=float(geom.findtext("sphere/radius"))))
     return out
 
-
-# ======================================================================================================
-# 2. Which object is where in a picture?
-# ======================================================================================================
-
+# Which object is where in a picture?
+# Return one dict per object that is at least partly in view, with status
+# LABEL / AMBIGUOUS (too small or too occluded) and, for LABEL, the pixel box.
 def label_frame(depth, pose, calib, objects):
-    """Return one dict per object that is at least partly in view, with status
-    LABEL / AMBIGUOUS (too small or too occluded) and, for LABEL, the pixel box."""
     H, W = depth.shape
     R_wc, o = camera_pose_world(pose["x"], pose["y"], pose["yaw_rad"], calib)
     D = pixel_rays(calib, R_wc)
@@ -120,7 +108,6 @@ def label_frame(depth, pose, calib, objects):
         out.append(rec)
     return out
 
-
 def yolo_lines(results, W, H):
     lines = []
     for r in results:
@@ -130,7 +117,6 @@ def yolo_lines(results, W, H):
         lines.append(f"{CLASSES.index(r['cls'])} {(x1 + x2) / 2 / W:.6f} {(y1 + y2) / 2 / H:.6f} "
                      f"{(x2 - x1) / W:.6f} {(y2 - y1) / H:.6f}")
     return lines
-
 
 def draw_overlay(bgr, results):
     img = bgr.copy()

@@ -1,10 +1,4 @@
-"""dataset.py - from the running simulation to a train / val / test split, in four steps.
-
-  1. pose sampling   where may the robot stand?  free cells of the saved map, random and look-at poses
-  2. collect         teleport the robot to many poses and save RGB + depth + true pose     [ROS + simulation]
-  3. label           ground-truth YOLO labels + an independent colour check of every frame
-  4. build           split the labelled frames by floor location into train / val / test
-"""
+# Running simulation to a train / val / test split.
 import glob
 import json
 import math
@@ -22,13 +16,9 @@ from pipeline_config import (CALIB, CLASSES, CLEARANCE, DATASET, LOOK_DIST, LOOK
                              MODES, RAW, WORLD)
 from ros_collector import ros_collector_class
 
-
-# ======================================================================================================
-# 1. Pose sampling: where may the robot stand?
-# ======================================================================================================
-
+# Pose sampling: where may the robot stand?
+# Free cells of the saved map, with clearance, line of sight and pose sampling.
 class FreeSpace:
-    """Free cells of the saved map, with clearance, line of sight and pose sampling."""
 
     def __init__(self, yaml_path, clearance=CLEARANCE):
         meta = yaml.safe_load(open(yaml_path))
@@ -73,14 +63,13 @@ class FreeSpace:
         x, y = self._jitter(rng, int(rng.integers(len(self.cand_x))))
         return x, y, float(rng.uniform(-math.pi, math.pi))
 
+    # A free pose between dmin and dmax from the target with a clear line to it, aimed at it. None if no such pose is found.
     def lookat_pose(self, rng, target_xy, dmin, dmax, jitter, stop_before, tries=300):
-        """A free pose between dmin and dmax from the target with a clear line to it, aimed at it
-        (plus a random aim error up to +-jitter). None if no such pose is found."""
         tx, ty = target_xy
         d = np.hypot(self.cand_x - tx, self.cand_y - ty)
         idx = np.nonzero((d >= dmin) & (d <= dmax))[0]
         for i in rng.permutation(idx)[:tries]:
-            x, y = self._jitter(rng, int(i))
+            x, y = self._jitter(rng, int(i)) # a random aim error up to +-jitter
             dist = math.hypot(tx - x, ty - y)
             if dist < dmin * 0.9:
                 continue
@@ -90,16 +79,14 @@ class FreeSpace:
                 return x, y, angle_diff(yaw, 0.0)
         return None
 
-
 def radius_of(obj):
     if obj["kind"] == "box":
         return float(math.hypot(obj["half"][0], obj["half"][1]))
     return float(obj["radius"])
 
-
+    # Pick a sampling mode and a pose. Returns (mode, target name or None, (x, y, yaw)).
+    # Force: always use this mode ("red", "blue", "grey" or "random"); "grey" aims at the unlabelled look-alikes.
 def choose_pose(space, objects, rng, force=None, distractors=()):
-    """Pick a sampling mode and a pose. Returns (mode, target name or None, (x, y, yaw)).
-    force: always use this mode ("red", "blue", "grey" or "random"); "grey" aims at the unlabelled look-alikes."""
     mode = force or str(rng.choice(MODES, p=MODE_WEIGHTS))
     if mode in ("red", "blue", "grey"):
         if mode == "grey":
@@ -114,15 +101,10 @@ def choose_pose(space, objects, rng, force=None, distractors=()):
                 return mode, target["name"], pose
     return "random", None, space.random_pose(rng)
 
-
-# ======================================================================================================
-# 2. collect: random poses -> RGB + depth + pose  [ROS + simulation]
-# ======================================================================================================
-
+# Collect: random poses -> RGB + depth + pose  [ROS + simulation]
 def next_index(out):
     ids = [int(os.path.splitext(os.path.basename(p))[0]) for p in glob.glob(f"{out}/meta/*.json")]
     return max(ids) + 1 if ids else 0
-
 
 def make_montage(out, names, cols=3, w=320, h=240):
     tiles = []
@@ -138,9 +120,8 @@ def make_montage(out, names, cols=3, w=320, h=240):
     rows = [np.hstack(tiles[i:i + cols]) for i in range(0, len(tiles), cols)]
     cv2.imwrite(f"{out}/montage_last.png", np.vstack(rows))
 
-
+# Capture_at(x, y, yaw) -> (data dict or None, reason or None)
 def collect_loop(col, space, objects, n, out, seed, force=None, distractors=()):
-    """Main loop. `col` needs one method: capture_at(x, y, yaw) -> (data dict or None, reason or None)."""
     for sub in ("rgb", "depth", "meta"):
         os.makedirs(f"{out}/{sub}", exist_ok=True)
     start = next_index(out)
@@ -170,11 +151,10 @@ def collect_loop(col, space, objects, n, out, seed, force=None, distractors=()):
               f"pose=({ox:6.2f},{oy:6.2f},{math.degrees(oyaw):7.1f} deg)  ETA {el / saved * (n - saved) / 60:4.1f} min")
     if names:
         make_montage(out, names[-12:])
-    print(f"\nsaved {saved} frames in {(time.time() - t0) / 60:.1f} min  (attempts {attempts})")
+    print(f"\nSaved {saved} frames in {(time.time() - t0) / 60:.1f} min  (attempts {attempts})")
     print(f"  by mode: {mode_counts}")
-    print(f"  skipped: {skipped if skipped else 'none'}")
+    print(f"  Skipped: {skipped if skipped else 'none'}")
     return saved
-
 
 def collect_arguments(p):
     p.add_argument("n", type=int, help="number of frames to collect")
@@ -182,7 +162,6 @@ def collect_arguments(p):
     p.add_argument("--seed", type=int, help="random seed (default: derived from the number of existing frames)")
     p.add_argument("--only", choices=("red", "blue", "grey", "random"),
                    help="use only this mode; grey = look at the unlabelled grey objects (look-alike stress test)")
-
 
 def run_collect(a):
     import rclpy
@@ -199,28 +178,20 @@ def run_collect(a):
     col.destroy_node()
     rclpy.shutdown()
 
-
-# ======================================================================================================
-# 3. label: ground-truth labels + colour quality check (every object in our world has one flat colour)
-# ======================================================================================================
-
+# Label: ground-truth labels + colour quality check (every object in our world has one flat colour)
 CLASS_COLOUR = {"red_box": "red", "blue_box": "blue", "blue_cylinder": "blue"}
-
 PRECISION_MIN = 0.90
-
 UNCOVERED_MIN_PX = 25
 
-
+# Measured: red cube (138,8,8) and lit side (220,10,10),
+# dark blue cubes (8,15,138), shaded blue cylinder about (11,22,199); grey scenery has r ~ g ~ b.
 def colour_masks(bgr):
-    """Pixels that are clearly red / clearly blue. Measured: red cube (138,8,8) and lit side (220,10,10),
-    dark blue cubes (8,15,138), shaded blue cylinder about (11,22,199); grey scenery has r ~ g ~ b."""
     b, g, r = (bgr[:, :, i].astype(np.int16) for i in range(3))
     return {"red": (r > 80) & (r - g > 60) & (r - b > 60),
             "blue": (b > 80) & (b - r > 60) & (b - g > 50)}
 
-
+# Independent colour check of the labels. Returns (list of problems, lowest precision).
 def check_frame(bgr, results):
-    """Independent colour check of the labels. Returns (list of problems, lowest precision)."""
     cm = colour_masks(bgr)
     problems, min_prec = [], 1.0
     covered = np.zeros(bgr.shape[:2], bool)
@@ -243,13 +214,11 @@ def check_frame(bgr, results):
                 problems.append(f"unlabelled {cname} blob: {area} px at x={x} y={y} ({w}x{h})")
     return problems, float(min_prec)
 
-
 def caption(img, text, bad):
     cv2.rectangle(img, (0, 0), (img.shape[1], 18), (0, 0, 0), -1)
     cv2.putText(img, text, (4, 13), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
                 (80, 80, 255) if bad else (255, 255, 255), 1, cv2.LINE_AA)
     return img
-
 
 def label_folder(raw, objects, calib, montage_n=12, verbose=True):
     ids = sorted(os.path.splitext(os.path.basename(p))[0] for p in glob.glob(f"{raw}/meta/*.json"))
@@ -305,37 +274,29 @@ def label_folder(raw, objects, calib, montage_n=12, verbose=True):
     n_prob = sum(1 for f in ids if qa[f]["problems"])
     negatives = sum(1 for f in kept if qa[f]["labels"] == 0)
     print(f"\nframes: {len(ids)}   kept: {len(kept)}   dropped: {len(ids) - len(kept)} "
-          f"(ambiguous object in {n_amb}, colour-check problems in {n_prob})")
+          f"(Ambiguous object in {n_amb}, Colour-check problems in {n_prob})")
     n_prec = sum(1 for f in ids if any("expected colour" in p for p in qa[f]["problems"]))
     n_blob = sum(1 for f in ids if any("unlabelled" in p for p in qa[f]["problems"]))
-    print(f"drop reasons (a frame can have several): ambiguous object {n_amb}, low colour precision {n_prec}, "
-          f"unlabelled colour blob {n_blob}")
-    print(f"kept frames with no object (negatives): {negatives}")
-    print("instances in all frames / frames containing the class:")
+    print(f"Drop reasons (a frame can have several): Ambiguous object {n_amb}, Low colour precision {n_prec}, "
+          f"Unlabelled colour blob {n_blob}")
+    print(f"Kept frames with no object (negatives): {negatives}")
+    print("Instances in all frames / frames containing the class:")
     for c in CLASSES:
         print(f"  {c:<14} {inst[c]:>5} instances   {frames_with[c]:>4} frames")
     if depth_err:
-        print(f"label health: median depth error {np.median(depth_err):.1f} mm, median visible fraction "
+        print(f"Label health: median depth error {np.median(depth_err):.1f} mm, median visible fraction "
               f"{np.median(fracs) * 100:.1f}%, lowest colour precision {min(precs) if precs else float('nan'):.2f}")
     return qa
-
 
 def label_arguments(p):
     p.add_argument("--raw", default=RAW)
 
-
 def run_label(a):
     label_folder(a.raw, load_world_objects(WORLD), json.load(open(CALIB)))
 
-
-# ======================================================================================================
-# 4. build: split by floor location (frames from nearby poses are near-duplicates)
-# ======================================================================================================
-
+# Build: split by floor location (frames from nearby poses are near-duplicates)
 SPLITS = ("train", "val", "test")
-
 SPLIT_COLOUR = {"train": (180, 220, 180), "val": (110, 215, 245), "test": (225, 160, 205)}   # BGR
-
 
 def load_frames(raw, cell):
     qa = json.load(open(f"{raw}/qa.json"))
@@ -348,7 +309,6 @@ def load_frames(raw, cell):
                            classes=dict(Counter(q["classes"]))))
     return frames
 
-
 def split_stats(frames, split_of_cell):
     st = {s: dict(frames=0, neg=0, inst=Counter(), frames_with=Counter()) for s in SPLITS}
     for f in frames:
@@ -360,9 +320,9 @@ def split_stats(frames, split_of_cell):
             s["frames_with"][c] += 1
     return st
 
-
+# Scoring 
+# Lower is better: frame shares and per-class instance shares should match the targets.
 def score(frames, split_of_cell, targets):
-    """Lower is better: frame shares and per-class instance shares should match the targets."""
     st = split_stats(frames, split_of_cell)
     total = len(frames)
     sc = sum((st[s]["frames"] / total - targets[s]) ** 2 for s in SPLITS)
@@ -373,9 +333,8 @@ def score(frames, split_of_cell, targets):
         sc += 2.0 * sum((st[s]["inst"][c] / n - targets[s]) ** 2 for s in SPLITS)     # rare classes matter
     return sc
 
-
+# Random search over assignments of whole cells to splits; returns the best one.
 def assign_cells(frames, targets, seed, tries=20000):
-    """Random search over assignments of whole cells to splits; returns the best one."""
     cells = sorted({f["cell"] for f in frames})
     rng = random.Random(seed)
     probs = [targets[s] for s in SPLITS]
@@ -390,15 +349,14 @@ def assign_cells(frames, targets, seed, tries=20000):
     return best, best_sc
 
 
+# In the TRAIN split keep at most neg_max of the images as empty scenes. Returns the set of dropped ids.
 def cap_negatives(frames, split_of_cell, neg_max, seed):
-    """In the TRAIN split keep at most neg_max of the images as empty scenes. Returns the set of dropped ids."""
     train = [f for f in frames if split_of_cell[f["cell"]] == "train"]
     pos = [f for f in train if f["classes"]]
     neg = [f for f in train if not f["classes"]]
     allowed = int(neg_max / (1.0 - neg_max) * len(pos))
     random.Random(seed).shuffle(neg)
     return {f["id"] for f in neg[allowed:]}
-
 
 def draw_map(path, frames, split_of_cell, cell, objects):
     S, M = 80, 40                                          # pixels per metre, margin
@@ -425,7 +383,6 @@ def draw_map(path, frames, split_of_cell, cell, objects):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 1, cv2.LINE_AA)
     cv2.imwrite(path, img)
 
-
 def build_dataset(raw, out, cell=1.5, p_val=0.15, p_test=0.15, neg_max=0.10, seed=0, objects=()):
     frames = load_frames(raw, cell)
     targets = {"train": 1.0 - p_val - p_test, "val": p_val, "test": p_test}
@@ -450,11 +407,10 @@ def build_dataset(raw, out, cell=1.5, p_val=0.15, p_test=0.15, neg_max=0.10, see
     draw_map(f"{out}/split_map.png", kept, split_of_cell, cell, objects)
     return kept, split_of_cell, dropped_neg
 
-
 def print_split_report(kept, split_of_cell, dropped_neg, n_cells_total):
     st = split_stats(kept, split_of_cell)
     n = len(kept)
-    print(f"used {n} frames ({len(dropped_neg)} surplus empty-scene frames left out of train); "
+    print(f"Used {n} frames ({len(dropped_neg)} surplus empty-scene frames left out of train); "
           f"{len(set(split_of_cell.values()))} splits over {n_cells_total} floor cells\n")
     print(f"{'split':<7}{'cells':>6}{'frames':>8}{'share':>7}{'empty':>7}   " +
           "   ".join(f"{c} (inst/frames)" for c in CLASSES))
@@ -463,7 +419,6 @@ def print_split_report(kept, split_of_cell, dropped_neg, n_cells_total):
         row = f"{s:<7}{cells:>6}{st[s]['frames']:>8}{st[s]['frames'] / n * 100:>6.0f}%{st[s]['neg']:>7}   "
         row += "   ".join(f"{st[s]['inst'][c]:>6}/{st[s]['frames_with'][c]:<5}" + " " * (len(c) + 1) for c in CLASSES)
         print(row)
-
 
 def build_arguments(p):
     p.add_argument("--raw", default=RAW)
@@ -474,9 +429,8 @@ def build_arguments(p):
     p.add_argument("--neg-max", type=float, default=0.10, help="max share of empty-scene images in train")
     p.add_argument("--seed", type=int, default=0)
 
-
 def run_build(a):
     objects = load_world_objects(WORLD)
     kept, soc, dropped = build_dataset(a.raw, a.out, a.cell, a.val, a.test, a.neg_max, a.seed, objects)
     print_split_report(kept, soc, dropped, len(soc))
-    print(f"\nwritten to {a.out}   (data.yaml, split.json, split_map.png)")
+    print(f"\nWritten to {a.out}   (data.yaml, split.json, split_map.png)")

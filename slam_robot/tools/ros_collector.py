@@ -1,38 +1,28 @@
-"""ros_collector.py - everything that needs a running simulation and ROS:
-  Collector       finds the robot, teleports it and grabs a fresh RGB + depth + odom set (dataset.py, teleport.py)
-  run_calibrate   reads the camera model from /camera/camera_info and TF  ->  config/camera_calibration.json
-
-ROS is imported inside ros_collector_class() and run_calibrate(), not at the top, so the rest of the
-pipeline (label / build / train / evaluate) works on a machine without ROS.
-"""
+# Collects RGB, depth and odometry data from the simulation.
 import json
 import math
 import os
 import sys
 import time
 import numpy as np
-
 from camera_geometry import angle_diff, finalize_rotation, merge_calibration, quat_to_rot, quat_to_yaw, to_optical
 from pipeline_config import BASE_FRAME, CALIB, POSE_TOL_DEG, POSE_TOL_M, ROBOT_NAME, SETTLE_SIM_S
 from teleport import teleport_entity
 
-
+# Gazebo Model
 def pick_robot(names):
-    """The robot is the Gazebo model that simulation.launch.py spawns as ROBOT_NAME."""
     return ROBOT_NAME if ROBOT_NAME in names else None
-
 
 def stamp_s(header):
     return header.stamp.sec + header.stamp.nanosec * 1e-9
 
-
+# Check if the RGB / depth / odom messages are all fresh (after a teleport).
 def ready(rgb, depth, odom, t_min):
-    """True when RGB, depth and odom all arrived and were recorded at least at simulated time t_min."""
     return all(m is not None and m[0] >= t_min for m in (rgb, depth, odom))
 
 
+# Build the Collector node class.
 def ros_collector_class():
-    """Build the Collector node class (ROS is imported here, see the top of this file)."""
     import rclpy
     from gazebo_msgs.msg import ModelStates
     from gazebo_msgs.srv import SetEntityState
@@ -109,11 +99,7 @@ def ros_collector_class():
 
     return Collector
 
-
-# ======================================================================================================
-# the calibrate command
-# ======================================================================================================
-
+# Calibration: read the camera_info and TF, write slam_robot/tools/calib.json.
 def calibrate_arguments(p):
     """No options: everything comes from /camera/camera_info and TF."""
 
@@ -154,13 +140,13 @@ def run_calibrate(a):
     node.spin_until(lambda: node.depth_info is not None, 3)
     info = node.info
     K = list(info.k)
-    print(f"camera_info: frame_id='{info.header.frame_id}'  size={info.width}x{info.height}")
+    print(f"Camera_info: frame_id='{info.header.frame_id}'  size={info.width}x{info.height}")
     print(f"  fx={K[0]:.3f} fy={K[4]:.3f} cx={K[2]:.3f} cy={K[5]:.3f}")
     if node.depth_info is None:
-        print("  (no /camera/depth/camera_info received; assuming the depth camera has the same optics)")
+        print("  (No /camera/depth/camera_info received; assuming the depth camera has the same optics)")
     else:
         same = list(node.depth_info.k) == K and node.depth_info.header.frame_id == info.header.frame_id
-        print(f"  depth camera_info: frame_id='{node.depth_info.header.frame_id}', identical to RGB: {same}")
+        print(f"  Depth camera_info: frame_id='{node.depth_info.header.frame_id}', identical to RGB: {same}")
 
     frame = info.header.frame_id
     if not node.spin_until(lambda: node.tf_buffer.can_transform(BASE_FRAME, frame, Time()), 8):

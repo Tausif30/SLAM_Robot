@@ -1,9 +1,8 @@
 # Paths are relative to this file#
-
 import os
 
 # Paths
-PKG_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))          # .../src/slam_robot
+PKG_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))          # ~/slam_ws/src/slam_robot
 WS = os.path.expanduser(os.environ.get("SLAM_WS", "~/slam_ws"))                # where the big data lives (not in git)
 WORLD = os.path.join(PKG_DIR, "worlds", "object_search.world")
 MAP_YAML = os.path.join(PKG_DIR, "maps", "object_search_map.yaml")
@@ -28,7 +27,7 @@ NEAR_CLIP, FAR_CLIP = 0.1, 8.0   # camera clip planes (m): nothing outside them 
 MIN_PIXELS = 80              # smaller than this (about 9x9 px) is too tiny to be a label
 MIN_VISIBLE_FRAC = 0.35      # less than this visible -> too occluded to label
 
-# ---------------------------------------------------------------- collecting frames
+# Collecting frames
 CLEARANCE = 0.35                 # m from any wall/object: robot radius 0.22 + margin
 MODES = ("red", "blue", "random")
 MODE_WEIGHTS = (0.35, 0.35, 0.30)

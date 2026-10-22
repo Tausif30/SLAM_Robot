@@ -3,10 +3,6 @@
 #   python3 -m venv --system-site-packages ~/slam_ws/venv
 #   source ~/slam_ws/venv/bin/activate
 #   pip install -r requirements.txt
-#
-# NumPy 2 is used on purpose (PyTorch and Ultralytics need a recent NumPy). Ubuntu's own matplotlib and scipy are
-# built for NumPy 1 and crash with it, so they are pinned here: pip then installs fresh copies INSIDE the venv.
-# The ROS packages themselves are untouched; only programs started from this venv see these versions.
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 numpy==2.2.6
@@ -20,5 +16,4 @@ scipy==1.15.3
 # colcon (ROS Humble) builds Python packages with the old 'setup.py develop' command; 78.1.0 is the version tested here.
 setuptools<80
 
-# Only for the zero-shot YOLOE baseline (ml_pipeline.py evaluate --yoloe); Ultralytics installs it by itself on first use:
-#   git+https://github.com/ultralytics/CLIP.gitpackaging>=24.2   # setuptools 71+ needs a newer packaging than the system one (21.3)
+packaging>=24.2
