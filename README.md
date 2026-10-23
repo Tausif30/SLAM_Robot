@@ -254,16 +254,6 @@ changes on `/parameter_events`. The ones that matter here:
 | Nav2 (`amcl`, costmaps, `controller_server`, ...) | initial pose (-3, -2, 0), robot radius 0.22 m, resolution 0.05 m, controller 20 Hz | | `config/nav2_params.yaml` |
 | `slam_toolbox` | mode `mapping`, resolution 0.05 m, update every 2 s, loop closing on | | `config/slam_params.yaml` |
 
-### Transform tree
-
-```
-map -> odom -> base_footprint -> base_link -+-> wheel_left_link, wheel_right_link
- (amcl)  (diff drive)                       +-> caster_back_left_link, caster_back_right_link, imu_link
-                                            +-> base_scan                       (LiDAR)
-                                            +-> camera_link -+-> camera_rgb_frame   -> camera_rgb_optical_frame
-                                                             +-> camera_depth_frame -> camera_depth_optical_frame
-```
-
 ## Troubleshooting
 
 * **No window appears.** `echo $DISPLAY` should print something like `:0`. On Linux run `xhost +local:` first. On
