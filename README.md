@@ -254,28 +254,6 @@ changes on `/parameter_events`. The ones that matter here:
 | Nav2 (`amcl`, costmaps, `controller_server`, ...) | initial pose (-3, -2, 0), robot radius 0.22 m, resolution 0.05 m, controller 20 Hz | | `config/nav2_params.yaml` |
 | `slam_toolbox` | mode `mapping`, resolution 0.05 m, update every 2 s, loop closing on | | `config/slam_params.yaml` |
 
-## Troubleshooting
-
-* **No window appears.** `echo $DISPLAY` should print something like `:0`. On Linux run `xhost +local:` first. On
-  Windows, Microsoft's WSLg container example also mounts `/mnt/wslg`; if the windows do not open, add
-  `- /mnt/wslg:/mnt/wslg` under `volumes:` in `docker-compose.yml`.
-* **Everything is slow, and Nav2 warns `Behavior Tree tick rate 100.00 was exceeded`.** The CPU is drawing the windows.
-  Use the GPU file (see above) on WSL2 with a GPU, or lower the detector rate.
-* **`Unable to find uri[model://sun]` or `ground_plane` in the Gazebo log.** Gazebo's own folders were not on the path.
-  Start Gazebo with `slam sim` (Docker) or `source /usr/share/gazebo/setup.sh` first (native).
-* **`Message Filter dropping message ... earlier than all the data in the transform cache`.** Normal for a few seconds
-  while everything starts. If it never stops, the machine is overloaded.
-* **The robot does not move after a goal.** Wait for Nav2 (`docker compose exec robot slam ros2 lifecycle get
-  /bt_navigator` must say `active [3]`). If the robot looks misplaced, use **2D Pose Estimate**. A goal inside a wall
-  can be accepted by the planner, so click on free space.
-* **The camera window stays empty.** Start the simulation first. The detector only works while the window is open, and
-  it prints `in view: ...` when it sees something.
-* **`ros2 param set` says the parameter type is wrong.** Write the number with a decimal point (`3.0`, not `3`).
-* **Native: `No module named 'ultralytics'`.** The package was built with the system Python. Rebuild with
-  `python -m colcon build` while the virtual environment is active.
-* **Native: `canonicalize_version() got an unexpected keyword argument 'strip_trailing_zero'`.** Run
-  `pip install "packaging>=24.2"` inside the virtual environment (it is in `requirements.txt`).
-
 ## Licence
 
 GNU Affero General Public License v3.0 (see `LICENSE`). The detector uses Ultralytics YOLO, which is AGPL-3.0, and the
