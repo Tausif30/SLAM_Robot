@@ -3,9 +3,9 @@
 <package format="3">
   <name>slam_robot</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Gazebo + Nav2 + YOLO26 object search robot (ROS 2 Humble)</description>
   <maintainer email="tausif@gmail.com">tausif</maintainer>
-  <license>TODO: License declaration</license>
+  <license>AGPL-3.0-only</license>
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>

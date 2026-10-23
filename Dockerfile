@@ -60,6 +60,12 @@ RUN test "$(head -n 1 install/slam_robot/lib/slam_robot/detector_node)" = "#!$SL
 
 FROM workspace AS runtime
 
+# Links the image to this repository on GitHub (GitHub Container Registry reads the 'source' label) and states the licence.
+LABEL org.opencontainers.image.title="SLAM robot object search" \
+      org.opencontainers.image.description="Gazebo + Nav2 + YOLO26 object search robot (ROS 2 Humble), with the trained detector" \
+      org.opencontainers.image.source="https://github.com/Tausif30/SLAM_Robot" \
+      org.opencontainers.image.licenses="AGPL-3.0-only"
+
 COPY --chmod=0755 docker/slam /usr/local/bin/slam
 COPY weights/detector_v1.pt /opt/slam/models/detector_v1.pt
 

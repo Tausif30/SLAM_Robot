@@ -4,5 +4,4 @@ __pycache__/
 build/
 install/
 log/
-weights/
 .env

@@ -1,19 +1,22 @@
-# One container, three windows. Build the image first (docker build -t slam_robot .), then:
+# One container, three windows.
 #
+#   docker compose pull                       download the ready-made image (about 1.5 GB)
 #   docker compose up -d
 #   docker compose exec robot slam sim        window 1: Gazebo
 #   docker compose exec robot slam nav        window 2: Nav2 and RViz
 #   docker compose exec robot slam camera     window 3: what the robot recognises
 #   docker compose down
 #
-# The windows appear on your screen through the X11 socket: 
-# WSLg on Windows (nothing to set up),
-# Linux desktop (run  xhost +local:  once first).
+# To build the image yourself instead of downloading it:  docker compose build
+#
+# The windows appear on your screen through the X11 socket: WSLg on Windows (nothing to set up),
+# or a Linux desktop (run  xhost +local:  once first).
+# Windows with a GPU: also use docker-compose.wsl-gpu.yml (see the comments in that file).
 name: slam_robot
 
 services:
   robot:
-    image: slam_robot:latest
+    image: ghcr.io/tausif30/slam_robot:latest
     build: .
     container_name: slam
     command: ["sleep", "infinity"]     # the container just stays up; the three windows are started with 'exec'

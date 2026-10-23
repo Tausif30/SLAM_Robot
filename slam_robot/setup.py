@@ -31,8 +31,8 @@ setup(
     zip_safe=True,
     maintainer='tausif',
     maintainer_email='tausif3003@gmail.com',
-    description='',
-    license='TODO: License declaration',
+    description='Gazebo + Nav2 + YOLO26 object search robot (ROS 2 Humble)',
+    license='AGPL-3.0-only',
     entry_points={
         'console_scripts': [
             'detector_node = detector.detector_node:main',
