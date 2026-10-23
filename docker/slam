@@ -1,0 +1,52 @@
+#!/bin/bash
+# slam: start the project inside the container. ROS and our workspace are sourced first.
+#
+#   slam sim [args]       Gazebo with the robot and the world      (ros2 launch slam_robot simulation.launch.py)
+#   slam nav [args]       Nav2 and RViz                            (ros2 launch slam_robot navigation.launch.py)
+#   slam camera [args]    detector + the annotated camera picture  (ros2 launch slam_robot camera.launch.py)
+#   slam mapping [args]   SLAM Toolbox and RViz: make a new map    (ros2 launch slam_robot mapping.launch.py)
+#   slam shell            a shell with everything sourced (the default)
+#   slam <command> ...    any other command, e.g.  slam ros2 topic list
+#
+# Arguments go to the launch file:  slam camera detector_rate_hz:=3.0
+set -eo pipefail
+
+# ROS's setup scripts use variables they never define, so no 'set -u' here.
+# shellcheck source=/dev/null
+source "${SLAM_ROS_SETUP:-/opt/ros/humble/setup.bash}"
+# shellcheck source=/dev/null
+source "${SLAM_WS_SETUP:-/ws/install/setup.bash}"
+
+# Gazebo's own folders (models such as sun and ground_plane, resources, plugins) are put on the path by its setup.sh.
+# Without it the world cannot find them. That script also switches the online model database back on, which hangs
+# without internet, so it is switched off again afterwards.
+for gz_setup in "${SLAM_GAZEBO_SETUP:-}" /usr/share/gazebo/setup.sh /usr/share/gazebo-11/setup.sh; do
+    if [ -n "$gz_setup" ] && [ -f "$gz_setup" ]; then
+        # shellcheck source=/dev/null
+        source "$gz_setup" || true
+        break
+    fi
+done
+export GAZEBO_MODEL_DATABASE_URI=""
+
+# SLAM_GPU=1 (set by docker-compose.wsl-gpu.yml): draw with the GPU. The image forces drawing with the CPU by default.
+if [ -n "${SLAM_GPU:-}" ]; then
+    unset LIBGL_ALWAYS_SOFTWARE
+fi
+
+usage() {
+    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+cmd="${1:-shell}"
+if [ $# -gt 0 ]; then shift; fi
+
+case "$cmd" in
+    sim)            exec ros2 launch slam_robot simulation.launch.py "$@" ;;
+    nav)            exec ros2 launch slam_robot navigation.launch.py "$@" ;;
+    camera)         exec ros2 launch slam_robot camera.launch.py "$@" ;;
+    mapping)        exec ros2 launch slam_robot mapping.launch.py "$@" ;;
+    shell)          exec bash ;;
+    help|-h|--help) usage ;;
+    *)              exec "$cmd" "$@" ;;
+esac

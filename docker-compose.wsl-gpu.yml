@@ -1,0 +1,16 @@
+# Windows with WSL2 and a GPU: draw the windows with the GPU instead of the CPU.
+# Use it together with the main file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.wsl-gpu.yml up -d
+#
+# or put  COMPOSE_FILE=docker-compose.yml:docker-compose.wsl-gpu.yml  in a file called .env
+# (then plain 'docker compose ...' uses both files).
+services:
+  robot:
+    devices:
+      - /dev/dxg:/dev/dxg              # the GPU that WSL2 shares
+    volumes:
+      - /usr/lib/wsl:/usr/lib/wsl      # WSL's GPU libraries
+    environment:
+      LD_LIBRARY_PATH: /usr/lib/wsl/lib
+      SLAM_GPU: "1"                    # the 'slam' command then stops forcing CPU drawing

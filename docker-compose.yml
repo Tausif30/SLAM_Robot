@@ -6,8 +6,9 @@
 #   docker compose exec robot slam camera     window 3: what the robot recognises
 #   docker compose down
 #
-# The windows appear on your screen through the X11 socket: WSLg on Windows (nothing to set up),
-# or a Linux desktop (run  xhost +local:  once first).
+# The windows appear on your screen through the X11 socket: 
+# WSLg on Windows (nothing to set up),
+# Linux desktop (run  xhost +local:  once first).
 name: slam_robot
 
 services:

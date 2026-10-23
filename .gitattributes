@@ -1,0 +1,8 @@
+# These run on Linux (in the container): keep Unix line endings even when the repo is checked out on Windows.
+# A Windows line ending in a script ("bash\r") makes it fail to start.
+Dockerfile              text eol=lf
+.dockerignore           text eol=lf
+docker/*                text eol=lf
+*.sh                    text eol=lf
+docker-compose*.yml     text eol=lf
+requirements.txt        text eol=lf

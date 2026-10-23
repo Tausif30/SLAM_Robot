@@ -1,0 +1,7 @@
+*
+!requirements.txt
+!slam_robot
+!docker
+!weights
+**/__pycache__
+**/*.pyc
