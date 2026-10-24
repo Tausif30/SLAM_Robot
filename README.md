@@ -23,14 +23,6 @@ parts:
    visible. An independent colour test checks every label, so no picture was labelled by hand.
 4. **Packaging.** Everything runs from one Docker image, in three windows.
 
-**At a glance** (details and charts are in the report):
-
-* On the test pictures (taken at floor positions never seen in training) the detector found **214 of 215** objects with
-  **no false alarm** at any confidence from 0.05 to 0.7. The off-the-shelf zero-shot detector found 4 of the 90 red boxes
-  and raised 48 false alarms.
-* On a separate set aimed at the grey look-alikes it found 197 of 199 objects with no false alarm from confidence 0.25 up.
-* Inside the container Gazebo runs at real time (factor 1.00) and the detector needs 84 to 121 ms per picture, when the
-  GPU draws the windows.
 
 ## Project Video
 
