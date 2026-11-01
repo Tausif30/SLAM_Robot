@@ -15,7 +15,7 @@ parts:
 
 1. **SLAM.** SLAM Toolbox builds an occupancy-grid map from the LiDAR and the wheel odometry (232 x 136 cells of 5 cm,
    mean wall error 2.7 cm).
-2. **Navigation.** AMCL localises the robot on the saved map and Nav2 plans and drives to any point you click in RViz,
+2. **Navigation.** AMCL localises the robot on the saved map and Nav2 plans and drives to any point we click in RViz,
    avoiding obstacles with costmaps built from the LiDAR.
 3. **Perception.** A YOLO26n network recognises the red box, the blue boxes and the blue cylinder in the camera picture.
    It was fine-tuned only on pictures from the simulator that are **labelled automatically**: the world file says where
