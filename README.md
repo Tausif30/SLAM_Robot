@@ -217,7 +217,7 @@ ones the system uses (plus debug topics, `/rosout` and `/parameter_events`, whic
 | `/global_costmap/clear_entirely_global_costmap`, `/local_costmap/clear_entirely_local_costmap` | `nav2_msgs/ClearEntireCostmap` | the two costmaps | `bt_navigator` (recovery steps of its behavior tree) | forget obstacles when stuck |
 | `/lifecycle_manager_navigation/manage_nodes`, `/lifecycle_manager_localization/manage_nodes` | `nav2_msgs/ManageLifecycleNodes` | the lifecycle managers | RViz's Nav2 panel | start, pause or reset Nav2 |
 | `/<node>/change_state`, `/<node>/get_state` | `lifecycle_msgs/ChangeState`, `GetState` | each Nav2 lifecycle node | the lifecycle managers; you with `ros2 lifecycle get /bt_navigator` | configure and activate nodes |
-| `/slam_toolbox/save_map`, `/slam_toolbox/serialize_map` | `slam_toolbox/SaveMap`, `SerializePoseGraph` | `slam_toolbox` (mapping only) | you | save the map made while mapping |
+| `/slam_toolbox/save_map`, `/slam_toolbox/serialize_map` | `slam_toolbox/SaveMap`, `SerializePoseGraph` | `slam_toolbox` (mapping only) | us | save the map made while mapping |
 
 ### Actions (long goals with feedback)
 
